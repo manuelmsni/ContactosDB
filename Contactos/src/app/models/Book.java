@@ -74,6 +74,4 @@ public class Book extends AbstractTableModel{
         }
     }
     
-    
-    
 }

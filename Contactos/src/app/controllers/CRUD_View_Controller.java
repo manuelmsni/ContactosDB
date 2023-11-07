@@ -29,10 +29,25 @@ public class CRUD_View_Controller{
     
     public CRUD_View_Controller(CRUD_View view){
         this.view = view;
+        view.setLocationRelativeTo(null);
     }
     
     public void innitView(){
        initConectionButton();
+    }
+    
+    private void flush(){
+        view.getTxt_id().setText("");
+        view.getTxt_nombre().setText("");
+        view.getTxt_telefono().setText("");
+        selected = null;
+        selectedIndex = null;
+    }
+    
+    private void refresh(){
+        view.getTxt_id().setText(String.valueOf(selected.getId()));
+        view.getTxt_nombre().setText(selected.getName());
+        view.getTxt_telefono().setText(String.valueOf(selected.getNumber()));
     }
     
     private void initFunctionality(){
@@ -55,9 +70,7 @@ public class CRUD_View_Controller{
                         view.getBtn_new().setEnabled(true);
                         selectedIndex = filaSeleccionada;
                         selected = book.getContact(filaSeleccionada);
-                        view.getTxt_id().setText(String.valueOf(selected.getId()));
-                        view.getTxt_nombre().setText(selected.getName());
-                        view.getTxt_telefono().setText(String.valueOf(selected.getNumber()));
+                        refresh();
                     }
                 }
             }
@@ -72,17 +85,15 @@ public class CRUD_View_Controller{
                 view.getBtn_con().setEnabled(false);
                 book = new Book(contacts);
                 initFunctionality();
+                view.getTxt_id().setText(String.valueOf(con.sice()+1));
             }
         });
     }
     
     private void initNewButton(){
         view.getBtn_new().addActionListener((ActionEvent e) -> {
-            selected = null;
-            selectedIndex = null;
-            view.getTxt_id().setText("");
-            view.getTxt_nombre().setText("");
-            view.getTxt_telefono().setText("");
+            flush();
+            view.getTxt_id().setText(String.valueOf(con.sice()+1));
             view.getBtn_add().setEnabled(true);
             view.getBtn_new().setEnabled(false);
         });
@@ -91,13 +102,17 @@ public class CRUD_View_Controller{
     private void initAddButton(){
         view.getBtn_add().addActionListener((ActionEvent e) -> {
             try{
+                int id = Integer.parseInt(view.getTxt_id().getText());
                 String name = view.getTxt_nombre().getText();
                 Integer number = Integer.parseInt(view.getTxt_telefono().getText());
                 if (name != null && number != null){
-                    book.addContact(new Contact(name, number));
+                    if(con.addContact(name, number)) book.addContact(new Contact(id, name, number));
+                    selectLast();
+                    view.getBtn_add().setEnabled(false);
+                    view.getBtn_new().setEnabled(true);
                 }
             } catch (NumberFormatException ex){
-                ex.printStackTrace();
+                alert("No has introducido un número válido: \n" + ex.getMessage());
             }
         });
     }
@@ -105,24 +120,36 @@ public class CRUD_View_Controller{
     private void initEditButton(){
         view.getBtn_edit().addActionListener((ActionEvent e) -> {
             if (selected != null){
-                selected.setName(view.getTxt_nombre().getText());
-                selected.setNumber(Integer.parseInt(view.getTxt_telefono().getText()));
-                book.fireTableDataChanged();
-                view.getTbl_contactos().setRowSelectionInterval(selectedIndex, selectedIndex);
+                String name = view.getTxt_nombre().getText();
+                int number = Integer.parseInt(view.getTxt_telefono().getText());
+                if(con.updateContact(selected.getId(), name, number)){
+                    selected.setName(name);
+                    selected.setNumber(number);
+                    book.fireTableDataChanged();
+                    view.getTbl_contactos().setRowSelectionInterval(selectedIndex, selectedIndex);
+                }
             }
         });
+    }
+    
+    private void selectLast(){
+        JTable table = view.getTbl_contactos();
+        int size = book.getRowCount() - 1;
+        table.setRowSelectionInterval(size, size);
+        selectedIndex = size;
+        selected = book.getContact(size);
+        refresh();
     }
     
     private void initRemoveButton(){
         view.getBtn_del().addActionListener((ActionEvent e) -> {
             if (selected != null){
                 if(askYesNo("Vas a eliminar el contacto ¿Deseas continuar?")){
-                    book.removeContact(selected);
-                    view.getTxt_id().setText("");
-                    view.getTxt_nombre().setText("");
-                    view.getTxt_telefono().setText("");
-                    selected = null;
-                    selectedIndex = null;
+                    if(con.deleteContact(selected.getId())){
+                        book.removeContact(selected);
+                        flush();
+                        selectLast();
+                    }
                 }
             }
         });
@@ -135,6 +162,10 @@ public class CRUD_View_Controller{
         } else {
             return false;
         }
+    }
+    
+    private void alert(String message){
+        JOptionPane.showMessageDialog(null, message, "Alerta", JOptionPane.WARNING_MESSAGE);
     }
     
 

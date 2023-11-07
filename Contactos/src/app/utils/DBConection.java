@@ -46,4 +46,61 @@ public class DBConection {
         }
         return contacts;
     }
+    
+    public boolean addContact(String name, int number){
+        String query = "INSERT INTO contactos (nombre, telefono) VALUES (?, ?)";
+        try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, number);
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    public boolean deleteContact(int id){
+        String query = "DELETE FROM contactos WHERE id IS ?";
+        try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
+            preparedStatement.setInt(1, id);
+            int rowsAffected = preparedStatement.executeUpdate();
+            if (rowsAffected > 0) {
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    public boolean updateContact(int id, String name, int number) {
+        String query = "UPDATE contactos SET nombre = ?, telefono = ? WHERE id = ?";
+        try (PreparedStatement preparedStatement = con.prepareStatement(query)) {
+            preparedStatement.setString(1, name);
+            preparedStatement.setInt(2, number);
+            preparedStatement.setInt(3, id);
+            int rowsAffected = preparedStatement.executeUpdate();
+            return rowsAffected > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+   
+    public int sice() {
+        String query = "SELECT c.id FROM contactos c ORDER BY c.id DESC LIMIT 1";
+        try (PreparedStatement preparedStatement = con.prepareStatement(query);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+            if (resultSet.next()) {
+                int lastId = resultSet.getInt("id");
+                return lastId;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
 }
